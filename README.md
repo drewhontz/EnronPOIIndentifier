@@ -36,11 +36,11 @@ I did end up scaling my features using a MinMaxScaler as we have a lot of numeri
 
 Since our data has two groupings, financial and conversations, I thought I would try and make features that combine the best features in those categories.
 
-I identified which features to use from each section by using SelectKBest where k=7\. I would them look at the 7 strongest features, and lump them together.
+My thought process was, if I combine the strongest features from each category, I could have 2 extra strong features to represent each of our categories. However when I put this to the test, the new features were not selected by my SelectKBest estimator and our recall scores were typically lower (shown in table in next section).
 
-I combined salary and bonus in payout, several of our stock options in stock, and our message to and from poi fields in poi_conversation.
+I identified which features to use from each section by using SelectKBest where k=7\. I would them look at the 7 strongest features, and add those in similar categories together (i.e. payout would become bonus + salary, poi_conversation = to and from POI message counts added together).
 
-I did not end up using any of my features as the performance was stronger without them.
+I did not end up using any of my features as they were not often selected by our SelectKBest and in the table in our next section, you can see performance was stronger without them.
 
 Decision Tree Feature importances:
 
@@ -60,7 +60,23 @@ I chose k=3 over k=5 or k=7 as our accuracy, precision, and recall were at their
 
 I ended up using the DecisionTreeClassifier although I tried RandomForest, Naive Bayes (GaussianNB), SVC, and even LogisticRegression.
 
-Accuracy was comparable across the board, but my DecisionTreeClassifier had the best combination of precision and recall scores with RandomForest a close second.
+Accuracy was comparable across the board, but my DecisionTreeClassifier without engineered features had the best combination of precision and recall scores with RandomForest a close second.
+
+Algorithm                   | Accuracy | Precision | Recall
+--------------------------- | -------- | --------- | ------
+With Engineered Features    |          |           |
+DecisionTreeClassifier      | .83      | .37       | .31
+RandomForest                | .83      | .45       | .28
+Naive Bayes                 | .81      | .33       | .30
+Support Vector Machine      | .81      | .20       | .25
+LogisticRegression          | .81      | .20       | .25
+                            |          |           |
+Without Engineered Features |          |           |
+DecisionTreeClassifier      | .86      | .38       | .33
+RandomForest                | .86      | .38       | .32
+Naive Bayes                 | .83      | .34       | .31
+Support Vector Machine      | .83      | .20       | .25
+LogisticRegression          | .83      | .20       | .25
 
 ### What does it mean to tune the parameters of an algorithm, and what can happen if you don't do this well? How did you tune the parameters of your particular algorithm? (Some algorithms do not have parameters that you need to tune -- if this is the case for the one you picked, identify and briefly explain how you would have done it for the model that was not your final choice or a different model that does utilize parameter tuning, e.g. a decision tree classifier)
 
@@ -76,9 +92,15 @@ If you do not perform this task well, you can have an underfit or overfit model.
 
 Validation is a process by which you evaluate how well your model has been trained. Since we have supervised learning project, we can split our data into two sets, a training and a test set.
 
-I changed our splits to be 25-75 test-train.
+In my first iteration of my experiments I used a test-train split of 25%-75%; this means 75% of our data would be used to train our model and 25% used in tests to validate our model is appropriate (high accuracy, precision & recall > 0.3 etc).
 
-Our model will have 75% of our dataset to "understand" which rows have which labels. After this training is complete, we feed our model the label-less rows in our test set and compare its predictions against the actual labels in the label test set.
+However in the second iteration, it became clear that since our dataset is small a StratifiedShuffleSplit would actually be more appropriate than the test-train split.
+
+A test-train split could have theoretically split my data so that the POI proportions in my test and training splits could be vastly out of proportion (i.e. it could select 0, 1, or 2 POIs in training and 18, 17, or 16 in test and the model would be trained on too few POIs)
+
+It is better in this case to use test train splits that have equal proportions of POIs since our dataset is so unbalanced.
+
+StratifiedShuffleSplit can be used to create training and test sets with equal proportions of POI and NonPoi over many folds and return the best average, therefore in the second iteration of experiments I used this method instead.
 
 A classic validation mistake is leaving the label in the x or "row" set when testing, resulting in the model having near perfect accuracy.
 
@@ -97,4 +119,4 @@ Recall is the number of relevant items from what we selected. Let's say we are t
 
 For this project this translates to: Precision - 0.35979 of the people (roughly 52 people) I identified as POIs, were actually POIs.
 
-Recall - 0.37850, of those that I selected, I only captured this proportion of the total POIs. I.E. If there were 18 POIs, I would have only identified 7 people.
+Recall - 0.37850, of those that I selected, I only captured this proportion of the total POIs. I.E. If there were 18 POIs, I would have only identified 7 people. I would have only identified 7 people. .E. If there were 18 POIs, I would have only identified 7 people. I would have only identified 7 people. ly identified 7 people. I would have only identified 7 people.
